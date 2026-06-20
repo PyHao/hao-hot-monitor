@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import type { HotspotBundle, HotspotItem, SourceKey } from "../lib/types";
+import { BackgroundBeams, Highlight } from "./components/aceternity-lite";
 
 type ViewState = {
   loading: boolean;
@@ -51,6 +53,7 @@ function buildMetrics(items: HotspotItem[]) {
 
 export default function HomePage() {
   const [state, setState] = useState<ViewState>({ loading: true, error: null, bundle: null });
+  const prefersReducedMotion = useReducedMotion();
 
   const load = async () => {
     setState((current) => ({ ...current, loading: true, error: null }));
@@ -72,37 +75,56 @@ export default function HomePage() {
 
   const metrics = useMemo(() => buildMetrics(state.bundle?.items ?? []), [state.bundle]);
   const topItems = state.bundle?.items.slice(0, 12) ?? [];
+  const heroItems = topItems.slice(0, 4);
+  const refreshedAt = state.bundle ? new Date(state.bundle.generatedAt).toLocaleTimeString("zh-CN") : "--";
 
   return (
     <main className="shell">
+      <BackgroundBeams />
+
       <div className="topbar">
         <div className="brand">
           <span className="brand-mark" aria-hidden />
           <div className="brand-copy">
             <small>OpenRouter Hot Radar</small>
             <h1>热点信号台</h1>
+            <p>给急着第一时间发内容的人，盯住更值得讲的信号。</p>
           </div>
         </div>
 
         <div className="status-pill">
           <span className="status-dot" />
-          <span>{state.loading ? "正在刷新信号" : `已更新 ${state.bundle ? new Date(state.bundle.generatedAt).toLocaleTimeString("zh-CN") : "-"}`}</span>
+          <span>{state.loading ? "正在刷新信号" : `已更新 ${refreshedAt}`}</span>
         </div>
       </div>
 
       <section className="hero-grid">
         <article className="panel hero-panel">
+          <div className="hero-orbit" aria-hidden>
+            <span />
+            <span />
+            <span />
+          </div>
           <div className="hero-title">
             <div className="eyebrow">实时聚合 / AI 研判 / 手动刷新</div>
-            <h2>把微博、抖音、B站、知乎的热度，压缩成一张可执行的决策面板。</h2>
+            <h2>
+              把微博、抖音、B站、知乎的热度，压缩成一张
+              <Highlight className="hero-highlight">可执行的决策面板</Highlight>。
+            </h2>
             <p>
               页面会先尝试拉取各平台热点，再交给 OpenRouter 做统一研判。如果 AI 密钥尚未配置，系统会自动退回本地规则分析，保证前台依然可用。
             </p>
 
             <div className="hero-actions">
-              <button className="action-button action-primary" onClick={load} type="button">
+              <motion.button
+                className="action-button action-primary"
+                onClick={load}
+                type="button"
+                whileHover={prefersReducedMotion ? undefined : { y: -2, scale: 1.01 }}
+                whileTap={prefersReducedMotion ? undefined : { scale: 0.98 }}
+              >
                 立即刷新
-              </button>
+              </motion.button>
               <a className="action-button action-secondary" href="#signals">
                 查看信号
               </a>
@@ -127,6 +149,24 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+
+          <div className="hero-stack">
+            {heroItems.map((item, index) => (
+              <motion.article
+                className="hero-signal"
+                key={item.id}
+                initial={prefersReducedMotion ? false : { opacity: 0, y: 12 }}
+                animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, delay: index * 0.05 }}
+              >
+                <span className="hero-signal-source">{SOURCE_LABELS[item.source]}</span>
+                <strong>{item.title}</strong>
+                <div>
+                  热度 {formatNumber(item.heat)} · {item.mentions} 次提及
+                </div>
+              </motion.article>
+            ))}
+          </div>
         </article>
 
         <aside className="panel summary-panel">
@@ -137,7 +177,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="analysis-block">
+          <div className="analysis-block analysis-block-strong">
             <h4>关键观察</h4>
             <ul className="analysis-list">
               {(state.bundle?.analysis.keySignals ?? ["暂无数据"])
@@ -185,16 +225,26 @@ export default function HomePage() {
         </div>
 
         {state.loading && !state.bundle ? (
-          <div className="panel loading-card">正在抓取热点并生成 AI 研判...</div>
+          <div className="panel loading-card">
+            <div className="loading-rings" aria-hidden>
+              <span />
+              <span />
+              <span />
+            </div>
+            <p>正在抓取热点并生成 AI 研判...</p>
+          </div>
         ) : (
           <div className="source-grid">
-            {topItems.map((item) => (
-              <article
+            {topItems.map((item, index) => (
+              <motion.article
                 className="source-card"
                 key={item.id}
                 style={{
                   ["--accent" as never]: SOURCE_ACCENTS[item.source],
                 }}
+                initial={prefersReducedMotion ? false : { opacity: 0, y: 14 }}
+                animate={prefersReducedMotion ? undefined : { opacity: 1, y: 0 }}
+                transition={{ duration: 0.32, delay: index * 0.03 }}
               >
                 <div className="source-label">
                   <span aria-hidden>◆</span>
@@ -212,7 +262,7 @@ export default function HomePage() {
                     </span>
                   ))}
                 </div>
-              </article>
+              </motion.article>
             ))}
           </div>
         )}

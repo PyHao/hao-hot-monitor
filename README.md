@@ -1,4 +1,4 @@
-# Hao Hot Monitor
+# AI Hot Monitor
 
 ## 启动
 
